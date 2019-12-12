@@ -12,16 +12,16 @@ fun main(vararg args: String) {
   val runner = SpoonRunner.Builder().apply {
     setTestApk(cli.testApk)
     cli.otherApks.forEach { addOtherApk(it) }
-    cli.sdk?.let(this::setAndroidSdk)
-    cli.title?.let(this::setTitle)
+    cli.sdk.let(this::setAndroidSdk)
+    cli.title.let(this::setTitle)
     setInstrumentationArgs(cli.instrumentationArgs);
-    cli.className?.let(this::setClassName)
-    cli.methodName?.let(this::setMethodName)
-    cli.size?.let(this::setTestSize)
-    cli.output?.let(this::setOutputDirectory)
+    cli.className.let(this::setClassName)
+    cli.methodName.let(this::setMethodName)
+    cli.size.let(this::setTestSize)
+    cli.output.let(this::setOutputDirectory)
     setAllowNoDevices(cli.allowNoDevices)
     setSequential(cli.sequential)
-    cli.initScript?.let(this::setInitScript)
+    cli.initScript.let(this::setInitScript)
     setGrantAll(cli.grantAll)
     setNoAnimations(cli.disableGif)
     cli.adbTimeout?.let(this::setAdbTimeout)

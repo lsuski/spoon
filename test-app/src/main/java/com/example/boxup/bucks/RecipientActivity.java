@@ -3,18 +3,19 @@ package com.example.boxup.bucks;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.EditText;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnTextChanged;
 
 public final class RecipientActivity extends AppCompatActivity {
-  @VisibleForTesting static boolean SENDING_FAIL = false;
+  @VisibleForTesting
+  static boolean SENDING_FAIL = false;
 
   private static final String KEY_AMOUNT_CENTS = "amount";
 
@@ -24,7 +25,8 @@ public final class RecipientActivity extends AppCompatActivity {
     return intent;
   }
 
-  @BindView(R.id.toolbar) Toolbar toolbar;
+  @BindView(R.id.toolbar)
+  Toolbar toolbar;
   @BindView(R.id.recipient) EditText recipientView;
 
   private long amount;

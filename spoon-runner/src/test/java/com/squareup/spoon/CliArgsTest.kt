@@ -3,8 +3,8 @@ package com.squareup.spoon
 import com.google.common.truth.Truth.assertThat
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.SystemExitException
-import java.io.File;
 import org.junit.Test
+import java.io.File
 
 
 class CliArgsTest {
@@ -28,7 +28,7 @@ class CliArgsTest {
     assertThat(cliArgs.otherApks[0].name).isEqualTo("app.apk")
     assertThat(cliArgs.instrumentationArgs?.get("package"))
         .isEqualTo("com.sample.testsuites")
-    assertThat(cliArgs.output?.path).isEqualTo("outputs" + File.separator + "spoon")
+    assertThat(cliArgs.output!!.path).isEqualTo("outputs" + File.separator + "spoon")
   }
 
   @Test
@@ -44,7 +44,7 @@ class CliArgsTest {
 
     assertThat(cliArgs.testApk.name).isEqualTo("app-androidTest.apk")
     assertThat(cliArgs.otherApks[0].name).isEqualTo("app.apk")
-    assertThat(cliArgs.output?.path).isEqualTo("outputs" + File.separator + "spoon")
+    assertThat(cliArgs.output!!.path).isEqualTo("outputs" + File.separator + "spoon")
     assertThat(cliArgs.instrumentationArgs).isNull()
   }
 
@@ -81,7 +81,7 @@ class CliArgsTest {
         "--method-name",
         "com.sample.testsuites.SomeClass#someMethod"
     )
-    var args = listOf(args1, args2, args3)
+    val args = listOf(args1, args2, args3)
     args
         .map { ArgParser(it) }
         .forEach {
@@ -89,7 +89,7 @@ class CliArgsTest {
             val cliArgs = CliArgs(it)
             assertThat(cliArgs).isEqualTo("this assertion shouldn't be executed, exception is expected")
           } catch (e: SystemExitException) {
-            assertThat(e).hasMessage("Ambiguous arguments: cannot provide both test package and test class(es)")
+            assertThat(e).hasMessageThat().isEqualTo("Ambiguous arguments: cannot provide both test package and test class(es)")
           }
         }
   }

@@ -4,6 +4,7 @@ import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
 import com.android.ddmlib.logcat.LogCatMessage;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
@@ -13,7 +14,6 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
@@ -54,6 +54,7 @@ public final class SpoonDeviceRunner {
   static final String FILE_DIR = "file";
   static final String COVERAGE_FILE = "coverage.ec";
   static final String COVERAGE_DIR = "coverage";
+  private static final String TMP = "/data/local/tmp/";
 
   private final File testApk;
   private final List<File> otherApks;
@@ -190,41 +191,17 @@ public final class SpoonDeviceRunner {
           "Unable to delete storage directories").addException(e).build();
     }
 
-    try {
-      grantReadWriteExternalStorage(deviceDetails, device);
-    } catch (Exception e) {
-      logInfo("Exception while granting external storage access to application apk"
-              + "on device [%s]", serial);
-      e.printStackTrace(System.out);
-      return result.markInstallAsFailed(
-          "Unable to grant external storage access to application APK.").addException(e).build();
-    }
-
     // Create the output directory, if it does not already exist.
     work.mkdirs();
 
-    // Determine the test set that is applicable for this device.
-    LogRecordingTestRunListener recorder;
-    List<TestIdentifier> activeTests;
-    List<TestIdentifier> ignoredTests;
-    try {
-      recorder = queryTestSet(testPackage, testRunner, device);
-      activeTests = recorder.activeTests();
-      ignoredTests = recorder.ignoredTests();
-      logDebug(debug, "Active tests: %s", activeTests);
-      logDebug(debug, "Ignored tests: %s", ignoredTests);
-    } catch (Exception e) {
-      return result
-          .addException(e)
-          .build();
-    }
 
     // Initiate device logging.
     SpoonDeviceLogger deviceLogger = new SpoonDeviceLogger(device);
 
     List<ITestRunListener> listeners = new ArrayList<>();
     listeners.add(new SpoonTestRunListener(result, debug));
-    listeners.add(new XmlTestRunListener(junitReport));
+    XmlTestRunListener xmlTestRunListener = new XmlTestRunListener(junitReport);
+    listeners.add(xmlTestRunListener);
     if (testRunListeners != null) {
       listeners.addAll(testRunListeners);
     }
@@ -239,6 +216,22 @@ public final class SpoonDeviceRunner {
         result.addException(e);
       }
     } else {
+      // Determine the test set that is applicable for this device.
+      LogRecordingTestRunListener recorder;
+      List<TestIdentifier> activeTests;
+      List<TestIdentifier> ignoredTests;
+      try {
+        recorder = queryTestSet(testPackage, testRunner, device);
+        activeTests = recorder.activeTests();
+        ignoredTests = recorder.ignoredTests();
+        logDebug(debug, "Active tests: %s", activeTests);
+        logDebug(debug, "Ignored tests: %s", ignoredTests);
+      } catch (Exception e) {
+        return result
+                .addException(e)
+                .build();
+      }
+
       MultiRunITestListener multiRunListener = new MultiRunITestListener(listeners);
       multiRunListener.multiRunStarted(recorder.runName(), recorder.testCount());
 
@@ -279,23 +272,10 @@ public final class SpoonDeviceRunner {
     } catch (Exception e) {
       result.addException(e);
     }
-    logDebug(debug, "Done running for [%s]", serial);
+    int testsCount = xmlTestRunListener.getTestsCount();
+    logDebug(debug, "Done running %d tests for [%s]", testsCount,serial);
+    result.setTestsCount(testsCount);
     return result.build();
-  }
-
-  private void grantReadWriteExternalStorage(DeviceDetails deviceDetails, IDevice device)
-      throws Exception {
-    // If this is Android Marshmallow or above grant WRITE_EXTERNAL_STORAGE
-    if (deviceDetails.getApiLevel() >= DeviceDetails.MARSHMALLOW_API_LEVEL) {
-      String appPackage = instrumentationInfo.getApplicationPackage();
-      CollectingOutputReceiver grantOutputReceiver = new CollectingOutputReceiver();
-      device.executeShellCommand(
-              "pm grant " + appPackage + " android.permission.READ_EXTERNAL_STORAGE",
-              grantOutputReceiver);
-      device.executeShellCommand(
-              "pm grant " + appPackage + " android.permission.WRITE_EXTERNAL_STORAGE",
-              grantOutputReceiver);
-    }
   }
 
   private LogRecordingTestRunListener queryTestSet(final String testPackage,
@@ -348,15 +328,14 @@ public final class SpoonDeviceRunner {
     }
 
     if (codeCoverage) {
-      addCodeCoverageInstrumentationArgs(runner, device);
+      addCodeCoverageInstrumentationArgs(runner);
     }
 
     return runner;
   }
 
-  private void addCodeCoverageInstrumentationArgs(RemoteAndroidTestRunner runner, IDevice device)
-          throws Exception {
-    String coveragePath = getExternalStoragePath(device, COVERAGE_FILE);
+  private void addCodeCoverageInstrumentationArgs(RemoteAndroidTestRunner runner) {
+    String coveragePath = getCoveragePathOnDevice();
     runner.addInstrumentationArg("coverage", "true");
     runner.addInstrumentationArg("coverageFile", coveragePath);
   }
@@ -384,16 +363,28 @@ public final class SpoonDeviceRunner {
     }
   }
 
-  private void pullCoverageFile(IDevice device) {
+  private void pullCoverageFile(IDevice device) throws Exception {
+    String coveragePathOnDevice = getCoveragePathOnDevice();
+    logDebug(debug, "Pulling coverage files from [%s] on [%s]", coveragePathOnDevice,serial);
     coverageDir.mkdirs();
     File coverageFile = new File(coverageDir, COVERAGE_FILE);
-    String remotePath;
-    try {
-      remotePath = getExternalStoragePath(device, COVERAGE_FILE);
-    } catch (Exception exception) {
-      throw new RuntimeException("error while calculating coverage file path.", exception);
-    }
-    adbPullFile(device, remotePath, coverageFile.getAbsolutePath());
+
+    String temporaryCoverageCopy =
+            TMP + instrumentationInfo.getApplicationPackage() + "." + COVERAGE_FILE;
+
+    IShellOutputReceiver outputReceiver = new CollectingOutputReceiver();
+
+    device.executeShellCommand(
+            "run-as "+instrumentationInfo.getApplicationPackage() + " cat " + coveragePathOnDevice + " | cat > " + temporaryCoverageCopy,
+            outputReceiver);
+    adbPullFile(device, temporaryCoverageCopy, coverageFile.getAbsolutePath());
+
+    device.executeShellCommand("rm " + temporaryCoverageCopy, outputReceiver);
+  }
+
+
+  private String getCoveragePathOnDevice() {
+    return getInternalPath(COVERAGE_FILE);
   }
 
   private void handleImages(DeviceResult.Builder result, File screenshotDir) throws IOException {
@@ -518,6 +509,7 @@ public final class SpoonDeviceRunner {
           .pullFile(remoteFile, localDir, getNullProgressMonitor());
     } catch (Exception e) {
       logDebug(debug, e.getMessage(), e);
+      e.printStackTrace();
     }
   }
 
@@ -540,7 +532,7 @@ public final class SpoonDeviceRunner {
   private String getExternalStoragePath(IDevice device, final String path) throws Exception {
     CollectingOutputReceiver pathNameOutputReceiver = new CollectingOutputReceiver();
     device.executeShellCommand("echo $EXTERNAL_STORAGE", pathNameOutputReceiver);
-    return pathNameOutputReceiver.getOutput().trim() + "/" + path;
+    return pathNameOutputReceiver.getOutput().trim() + "/Android/data/"+ instrumentationInfo.getApplicationPackage() + "/" + path;
   }
 
   /** Grab all the parsed logs and map them to individual tests. */

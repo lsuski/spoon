@@ -63,6 +63,7 @@ public final class SpoonRunnerTest {
         .addResult("123", new DeviceResult.Builder() //
             .startTests() //
             .endTests() //
+            .setTestsCount(1)
             .build()) //
         .end() //
         .build(); //

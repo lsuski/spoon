@@ -23,10 +23,11 @@ public final class DeviceResult {
   private final long started;
   private final long duration;
   private final List<StackTrace> exceptions;
+  private final int testsCount;
 
   private DeviceResult(boolean installFailed, String installMessage, DeviceDetails deviceDetails,
-      Map<DeviceTest, DeviceTestResult> testResults, long started, long duration,
-      List<StackTrace> exceptions) {
+                       Map<DeviceTest, DeviceTestResult> testResults, long started, long duration,
+                       List<StackTrace> exceptions, int testsCount) {
     this.installFailed = installFailed;
     this.installMessage = installMessage;
     this.deviceDetails = deviceDetails;
@@ -34,6 +35,7 @@ public final class DeviceResult {
     this.testResults = unmodifiableMap(new TreeMap<>(testResults));
     this.duration = duration;
     this.exceptions = unmodifiableList(new ArrayList<>(exceptions));
+    this.testsCount = testsCount;
   }
 
   /**
@@ -80,6 +82,10 @@ public final class DeviceResult {
     return exceptions;
   }
 
+  public int getTestsCount() {
+    return testsCount;
+  }
+
   static class Builder {
     private boolean installFailed = false;
     private String installMessage = null;
@@ -89,6 +95,7 @@ public final class DeviceResult {
     private long start;
     private long duration = -1;
     private final List<StackTrace> exceptions = new ArrayList<>();
+    private int testsCount;
 
     public Builder addTestResultBuilder(DeviceTest test,
         DeviceTestResult.Builder methodResultBuilder) {
@@ -142,6 +149,11 @@ public final class DeviceResult {
       return this;
     }
 
+    Builder setTestsCount(int testsCount) {
+      this.testsCount = testsCount;
+      return this;
+    }
+
     public DeviceResult build() {
       // Convert builders to actual instances.
       Map<DeviceTest, DeviceTestResult> testResults = new HashMap<>();
@@ -150,7 +162,7 @@ public final class DeviceResult {
       }
 
       return new DeviceResult(installFailed, installMessage, deviceDetails, testResults, started,
-          duration, exceptions);
+                              duration, exceptions, testsCount);
     }
   }
 }

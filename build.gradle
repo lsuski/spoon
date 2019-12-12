@@ -1,53 +1,51 @@
 buildscript {
   ext.versions = [
-      'minSdk': 14,
-      'compileSdk': 27,
+      'minSdk': 16,
+      'compileSdk': 29,
+      'buildTools': '29.0.2',
 
-      'supportLibrary': '27.0.2',
-      'kotlin': '1.2.71',
+      'kotlin': '1.3.61',
       'errorProne': '2.0.19',
   ]
 
   ext.deps = [
-      'gson': 'com.google.code.gson:gson:2.8.0',
-      'argparser': 'com.xenomachina:kotlin-argparser:2.0.0',
+      'gson': 'com.google.code.gson:gson:2.8.2',
+      'argparser': 'com.xenomachina:kotlin-argparser:2.0.7',
       'commonsLang3': 'org.apache.commons:commons-lang3:3.3.1',
       'commonsIo': 'commons-io:commons-io:2.5',
-      'ddmlib': 'com.android.tools.ddms:ddmlib:26.0.1',
+      'ddmlib': 'com.android.tools.ddms:ddmlib:26.5.3',
       'animatedGifLib': 'com.madgag:animated-gif-lib:1.2',
       'guava': 'com.google.guava:guava:21.0',
       'lesscss': 'org.lesscss:lesscss:1.3.3',
       'mustache': 'com.github.spullara.mustache.java:compiler:0.8.14',
-      'jacocoMavenPlugin': 'org.jacoco:jacoco-maven-plugin:0.7.6.201602180812',
+      'jacocoMavenPlugin': 'org.jacoco:jacoco-maven-plugin:0.8.5',
       'butterknife': [
-          'runtime': 'com.jakewharton:butterknife:8.5.1',
-          'compiler': 'com.jakewharton:butterknife-compiler:8.5.1'
+          'runtime': 'com.jakewharton:butterknife:10.2.0',
+          'compiler': 'com.jakewharton:butterknife-compiler:10.2.0'
       ],
       'kotlinStdLibJdk8': "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}",
 
       'junit': 'junit:junit:4.12',
-      'truth': 'com.google.truth:truth:0.31',
+      'truth': 'com.google.truth:truth:1.0',
 
       'support': [
-          'annotations': "com.android.support:support-annotations:${versions.supportLibrary}",
-          'appCompat': "com.android.support:appcompat-v7:${versions.supportLibrary}",
-          'design': "com.android.support:design:${versions.supportLibrary}",
-          'constraintLayout': "com.android.support.constraint:constraint-layout:1.0.2",
+          'appCompat': "androidx.appcompat:appcompat:1.1.0",
+          'constraintLayout': "androidx.constraintlayout:constraintlayout:1.1.3",
 
           'test': [
-              'espresso': 'com.android.support.test.espresso:espresso-core:3.0.1',
-              'espressoContrib': 'com.android.support.test.espresso:espresso-contrib:3.0.1',
-              'runner': 'com.android.support.test:runner:1.0.1',
-              'rules': 'com.android.support.test:rules:1.0.1',
+              'espresso': 'androidx.test.espresso:espresso-core:3.2.0',
+              'espressoContrib': 'androidx.test.espresso:espresso-contrib:3.2.0',
+              'runner': 'androidx.test:runner:1.2.0',
           ],
       ],
   ]
 
   dependencies {
-    classpath 'com.android.tools.build:gradle:3.3.0-alpha12'
-    classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.2'
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.10'
+    classpath 'com.android.tools.build:gradle:3.5.3'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.1.1'
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
+    classpath 'digital.wup:android-maven-publish:3.6.3'
   }
 
   repositories {
@@ -68,15 +66,15 @@ subprojects { project ->
     jcenter()
   }
 
-  apply plugin: 'checkstyle'
-  project.checkstyle {
-    toolVersion "7.6.1"
-    configFile rootProject.file('checkstyle.xml')
-  }
+//  apply plugin: 'checkstyle'
+//  project.checkstyle {
+//    toolVersion "7.6.1"
+//    configFile rootProject.file('checkstyle.xml')
+//  }
 
-  if (!project.path.startsWith(':third-party')) {
-    project.apply(plugin: 'net.ltgt.errorprone')
-  }
+//  if (!project.path.startsWith(':third-party')) {
+//    project.apply(plugin: 'net.ltgt.errorprone')
+//  }
 
   configurations.all {
     resolutionStrategy {

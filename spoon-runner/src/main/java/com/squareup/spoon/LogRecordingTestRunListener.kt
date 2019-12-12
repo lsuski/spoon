@@ -1,10 +1,10 @@
 package com.squareup.spoon
 
-import com.android.annotations.VisibleForTesting
 import com.android.ddmlib.testrunner.ITestRunListener
 import com.android.ddmlib.testrunner.TestIdentifier
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
-import java.util.LinkedHashSet
+import java.util.*
 
 /**
  * Listens to an instrumentation invocation where `log=true` is set and records information about

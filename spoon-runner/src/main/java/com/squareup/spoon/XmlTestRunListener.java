@@ -9,6 +9,7 @@ import java.io.IOException;
  */
 class XmlTestRunListener extends com.android.ddmlib.testrunner.XmlTestRunListener {
   private final File file;
+  private int numTests;
 
   XmlTestRunListener(File file) {
     if (file == null) {
@@ -19,11 +20,16 @@ class XmlTestRunListener extends com.android.ddmlib.testrunner.XmlTestRunListene
 
   @Override
   public void testRunStarted(String runName, int numTests) {
+    this.numTests = numTests;
     getRunResult().testRunStarted(runName, numTests);
   }
 
   @Override protected File getResultFile(File reportDir) throws IOException {
     file.getParentFile().mkdirs();
     return file;
+  }
+
+  int getTestsCount() {
+    return numTests;
   }
 }
