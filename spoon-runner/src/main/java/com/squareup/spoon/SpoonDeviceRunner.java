@@ -162,8 +162,7 @@ public final class SpoonDeviceRunner {
     // Now install the main application and the instrumentation application.
     for (File otherApk : otherApks) {
       try {
-        String extraArgument = getGrantAllExtraArgument(deviceDetails);
-        device.installPackage(otherApk.getAbsolutePath(), true, extraArgument);
+        installApk(device, deviceDetails, otherApk,instrumentationInfo.getApplicationPackage() ,"other apk");
       } catch (InstallException e) {
         logInfo("InstallException while install other apk on device [%s]", serial);
         e.printStackTrace(System.out);
@@ -171,8 +170,7 @@ public final class SpoonDeviceRunner {
       }
     }
     try {
-      String extraArgument = getGrantAllExtraArgument(deviceDetails);
-      device.installPackage(testApk.getAbsolutePath(), true, extraArgument);
+      installApk(device, deviceDetails, testApk, instrumentationInfo.getInstrumentationPackage(), "test apk");
     } catch (InstallException e) {
       logInfo("InstallException while install test apk on device [%s]", serial);
       e.printStackTrace(System.out);
@@ -276,6 +274,22 @@ public final class SpoonDeviceRunner {
     logDebug(debug, "Done running %d tests for [%s]", testsCount,serial);
     result.setTestsCount(testsCount);
     return result.build();
+  }
+
+  private void installApk(IDevice device, DeviceDetails deviceDetails, File testApk, String packageName, String apkDesc) throws InstallException {
+    try {
+      installApk(device, deviceDetails, testApk);
+    } catch (InstallException e){
+      logInfo("InstallException while install %s on device [%s]: %s", apkDesc,serial,e.getMessage());
+      logInfo("Uninstalling "+packageName);
+      device.uninstallPackage(packageName);
+      installApk(device, deviceDetails, testApk);
+    }
+  }
+
+  private void installApk(IDevice device, DeviceDetails deviceDetails, File testApk) throws InstallException {
+    String extraArgument = getGrantAllExtraArgument(deviceDetails);
+    device.installPackage(testApk.getAbsolutePath(), true, extraArgument);
   }
 
   private LogRecordingTestRunListener queryTestSet(final String testPackage,
