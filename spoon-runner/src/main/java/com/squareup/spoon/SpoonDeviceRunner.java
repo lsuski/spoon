@@ -160,13 +160,15 @@ public final class SpoonDeviceRunner {
     DdmPreferences.setTimeOut((int) adbTimeout.toMillis());
 
     // Now install the main application and the instrumentation application.
-    for (File otherApk : otherApks) {
-      try {
-        installApk(device, deviceDetails, otherApk,instrumentationInfo.getApplicationPackage() ,"other apk");
-      } catch (InstallException e) {
-        logInfo("InstallException while install other apk on device [%s]", serial);
-        e.printStackTrace(System.out);
-        return result.markInstallAsFailed("Unable to install other APK.").addException(e).build();
+    if (otherApks.size() > 1 || otherApks.size() == 1 && !otherApks.get(0).getPath().equals(testApk.getPath())) {
+      for (File otherApk : otherApks) {
+        try {
+          installApk(device, deviceDetails, otherApk,instrumentationInfo.getApplicationPackage() ,"other apk");
+        } catch (InstallException e) {
+          logInfo("InstallException while install other apk on device [%s]", serial);
+          e.printStackTrace(System.out);
+          return result.markInstallAsFailed("Unable to install other APK.").addException(e).build();
+        }
       }
     }
     try {
